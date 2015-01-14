@@ -23,6 +23,8 @@
 #include "polymake/Array.h"
 #include "polymake/linalg.h"
 #include "polymake/Integer.h"
+#include "polymake/Map.h"
+#include "polymake/client.h"
 #include <string>
 #include <iostream>
 #include <set>
@@ -51,6 +53,7 @@ namespace polymake { namespace polytope {
         SparseVector<Rational>ineq(e*n+1);
         ineq[e]=1;
         inequalities/=ineq;
+        
         for(int i=0;i<n-1;++i) {
             for(int j=0;j<e;++j) {
                 SparseVector<Rational>ineq(n*e+1);
@@ -59,12 +62,28 @@ namespace polymake { namespace polytope {
                 inequalities /= ineq;
             }
         }
+         
+        
+        for (int i=1;i<e*n+1;++i){
+            SparseVector<Rational>ineq(n*e+1);
+            ineq[0]=m;
+            ineq[i]=1;
+            inequalities/=ineq;
+        }
+        for (int i=1;i<e*n+1;++i){
+            SparseVector<Rational>ineq(n*e+1);
+            ineq[0]=m;
+            ineq[i]=-1;
+            inequalities/=ineq;
+        }
         
         perl::Object P("Polytope");
         P.take("EQUATIONS") << equations;
         P.take("INEQUALITIES")<< inequalities;
         const Matrix<Rational> C = P.CallPolymakeMethod("LATTICE_POINTS");
         
+        std::cout<< inequalities.rows() << endl;
+        std::cout<< C.cols() << endl;
         return C;
 
     }
@@ -115,9 +134,9 @@ namespace polymake { namespace polytope {
             positive_parts.push_back(plus);
             negative_parts.push_back(minus);
         }
-        return
-        positive_parts.size() > 0 ||
-        negative_parts.size() > 0;
+        return 
+           positive_parts.size() > 0 || 
+           negative_parts.size() > 0;
     }
     
     template<typename E>
@@ -127,7 +146,7 @@ namespace polymake { namespace polytope {
         for (int i=0;i<M1.rows();++i){
             for (int j=0; j<M2.rows();++j){
                 if (M1[i]==M2[j]) {
-                    nequal++;
+                   nequal++;
                 }
             }
         }
@@ -136,14 +155,14 @@ namespace polymake { namespace polytope {
     
     bool compare_polytopes(const Galepolytope& P1, const Galepolytope& P2)
     {
-        if (P1.n_facets<P2.n_facets) {
-            return false;
-        } else if (P1.n_facets == P2.n_facets) {
-            if (P1.maxn_vertex < P2.maxn_vertex) {
-                return false;
-            }
-        }
-        return true;
+       if (P1.n_facets < P2.n_facets) {
+          return false;
+       } else if (P1.n_facets == P2.n_facets) {
+          if (P1.maxn_vertex < P2.maxn_vertex) {
+             return false;
+          }
+       }
+       return true;
     }
     
     //empty list of polytopes
@@ -216,6 +235,7 @@ namespace polymake { namespace polytope {
             
             polylist.push_back(Po);
         }
+
         
         //analyze the list we got:
         //order the list by number of facets:
